@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "319728776816",
+    "project_id": "squirrelmain-aa307",
+    "storage_bucket": "squirrelmain-aa307.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:319728776816:android:402092569c319a8c4b66b5",
+        "android_client_info": {
+          "package_name": "com.example.squirrel_main"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "319728776816-csl09fqmomd7fnh1pe9b2au1hp5u1je9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfkHON9P1FeUqOWIMmorUT0E51om1hT-k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "319728776816-csl09fqmomd7fnh1pe9b2au1hp5u1je9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
