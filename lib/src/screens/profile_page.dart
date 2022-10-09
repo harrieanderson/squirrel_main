@@ -257,9 +257,7 @@ class _ProfilePageUiState extends State<ProfilePageUi> {
                   child: Container(
                     alignment: Alignment.centerLeft,
                     padding: EdgeInsets.only(top: 1),
-                    child: Text(
-                      userModel.bio,
-                    ),
+                    child: Text('change to bio'),
                   ),
                 ),
                 Divider(
