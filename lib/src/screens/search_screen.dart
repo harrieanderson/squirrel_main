@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:squirrel_main/models/user.dart';
 import 'package:squirrel_main/services/database.dart';
-import 'package:squirrel_main/src/screens/profile_page.dart';
+import 'package:squirrel_main/src/screens/profile/profile_page.dart';
 
 class SearchScreen extends StatefulWidget {
   final String currentUserId;

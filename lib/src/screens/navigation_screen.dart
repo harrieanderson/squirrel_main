@@ -7,7 +7,7 @@ import 'package:squirrel_main/src/screens/add_post_screen.dart';
 import 'package:squirrel_main/src/screens/googlemaps/google_map_screen.dart';
 import 'package:squirrel_main/src/screens/home_screen.dart';
 import 'package:squirrel_main/src/screens/messages/message.dart';
-import 'package:squirrel_main/src/screens/profile_page.dart';
+import 'package:squirrel_main/src/screens/profile/profile_page.dart';
 
 class NavigationScreen extends StatefulWidget {
   const NavigationScreen({Key? key}) : super(key: key);

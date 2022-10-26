@@ -1,6 +1,9 @@
+import 'dart:ffi';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:squirrel_main/helperfunctions/sharedpref_helper.dart';
+import 'package:squirrel_main/models/activity.dart';
 import 'package:squirrel_main/models/comment.dart';
 import 'package:squirrel_main/models/cull_model.dart';
 import 'package:squirrel_main/models/post.dart';
@@ -17,16 +20,23 @@ class DatabaseMethods {
     });
   }
 
-  static Future<int> friendsNum(String userId) async {
-    QuerySnapshot friendsSnapshot =
-        await friendsRef.doc(userId).collection('Friends').get();
-    return friendsSnapshot.docs.length;
+  static Future<int> followersNum(String userId) async {
+    QuerySnapshot followersSnapshot =
+        await followersRef.doc(userId).collection('followers').get();
+    return followersSnapshot.docs.length;
   }
 
-  static Future<int> commentsNum(String userId) async {
+  static Future<int> commentsNum(String postId) async {
     QuerySnapshot commentsSnapshot =
-        await commentsRef.doc(userId).collection('comments').get();
+        await commentsRef.doc(postId).collection('comments').get();
     return commentsSnapshot.docs.length;
+  }
+
+// TODO: FINISH LIKES COUNT LOGCI
+  static Future<int> likesNum(String postId) async {
+    QuerySnapshot likesSnapshot =
+        await likesRef.doc(postId).collection('userLikes').get();
+    return likesSnapshot.docs.length;
   }
 
   static Future<int> postsNumb(String userId) async {
@@ -184,6 +194,8 @@ class DatabaseMethods {
     });
 
     likesRef.doc(post.id).collection('postLikes').doc(currentUserId).set({});
+
+    // addActivity(currentUserId, post, false, null);
   }
 
   static void unlikePost(String currentUserId, Post post) {
@@ -210,5 +222,36 @@ class DatabaseMethods {
         .get();
 
     return userDoc.exists;
+  }
+
+  static Future<List<Activity>> getActivities(String userId) async {
+    QuerySnapshot userActivitiesSnapshot = await activitiesRef
+        .doc(userId)
+        .collection('userActivities')
+        .orderBy('timestamp', descending: true)
+        .get();
+
+    List<Activity> activities = userActivitiesSnapshot.docs
+        .map((doc) => Activity.fromDoc(doc))
+        .toList();
+
+    return activities;
+  }
+
+  static void addActivity(
+      String currentUserId, Post post, bool follow, String followedUserId) {
+    if (follow) {
+      activitiesRef.doc(followedUserId).collection('userActivities').add({
+        'fromUserId': currentUserId,
+        'timestamp': Timestamp.fromDate(DateTime.now()),
+        'follow': true
+      });
+    } else {
+      activitiesRef.doc(post.id).collection('userActivities').add({
+        'fromUserId': currentUserId,
+        'timestamp': Timestamp.fromDate(DateTime.now()),
+        'follow': false
+      });
+    }
   }
 }

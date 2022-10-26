@@ -4,7 +4,7 @@ class Sighting {
   String uid;
   String colour;
   Timestamp timestamp;
-  String location;
+  GeoPoint location;
 
   Sighting(
       {required this.colour,

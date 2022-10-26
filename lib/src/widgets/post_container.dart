@@ -1,10 +1,7 @@
-// ignore_for_file: file_names
-
-import 'dart:ffi';
+// ignore_for_file: file_names, unrelated_type_equality_checks
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
+
 import 'package:flutter/material.dart';
 import 'package:squirrel_main/models/post.dart';
 import 'package:squirrel_main/models/user.dart';
@@ -12,8 +9,9 @@ import 'package:squirrel_main/repositories/user_repository.dart';
 import 'package:squirrel_main/services/database.dart';
 import 'package:squirrel_main/services/firestore_methods.dart';
 import 'package:squirrel_main/src/screens/comment_screen.dart';
-import 'package:squirrel_main/src/screens/profile_page.dart';
+import 'package:squirrel_main/src/screens/profile/profile_page.dart';
 import 'package:squirrel_main/utils/constant.dart';
+
 import 'package:squirrel_main/utils/utils.dart';
 
 class PostContainer extends StatefulWidget {
@@ -45,27 +43,41 @@ class _PostContainerState extends State<PostContainer> {
     }
   }
 
-  initPostLikes() async {
-    bool isLiked =
-        await DatabaseMethods.isLikePost(widget.currentUserId, widget.post);
-    if (mounted) {
+  // buildLikes() {
+  //   return StreamBuilder(
+  //     stream: getLikesCount(),
+  //     builder: ((context, snapshot) {
+  //       if (snapshot.hasData) {} return
+  //     }));
+  // }
+
+  Future<bool> getLikeStatus() async {
+    DocumentSnapshot document = await likesRef
+        .doc(widget.post.id)
+        .collection('userLikes')
+        .doc(widget.currentUserId)
+        .get();
+
+    if (document.exists) {
+      _isLiked = document.exists;
       setState(() {
-        _isLiked = isLiked;
+        _isLiked = document.exists;
       });
+      return true;
+    } else {
+      _isLiked = document.exists;
+      setState(() {
+        _isLiked = document.exists;
+      });
+      return false;
     }
   }
 
-  likePost() {
-    if (_isLiked) {
+  getLikesCount() async {
+    int likesCount = await DatabaseMethods.likesNum(widget.post.id);
+    if (mounted) {
       setState(() {
-        _isLiked = false;
-        _likesCount--;
-      });
-    } else {
-      DatabaseMethods.likePost(widget.currentUserId, widget.post);
-      setState(() {
-        _isLiked = true;
-        _likesCount++;
+        _likesCount = likesCount;
       });
     }
   }
@@ -81,9 +93,9 @@ class _PostContainerState extends State<PostContainer> {
   @override
   void initState() {
     super.initState();
-    _likesCount = widget.post.likes;
-    initPostLikes();
     getCommentCount();
+    getLikesCount();
+    getLikeStatus();
   }
 
   goToProfilePage(UserModel user) {
@@ -155,6 +167,43 @@ class _PostContainerState extends State<PostContainer> {
                       ),
                     ],
                   ),
+                  if (widget.currentUserId == widget.author.uid)
+                    IconButton(
+                      onPressed: () {
+                        showDialog(
+                          useRootNavigator: false,
+                          context: context,
+                          builder: (context) {
+                            return Dialog(
+                              child: ListView(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shrinkWrap: true,
+                                children: [
+                                  'Remove post?',
+                                ]
+                                    .map(
+                                      (e) => InkWell(
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 12, horizontal: 16),
+                                            child: Text(e),
+                                          ),
+                                          onTap: () {
+                                            deletePost(widget.post.id,
+                                                widget.currentUserId);
+                                            // remove the dialog box
+                                            Navigator.of(context).pop();
+                                          }),
+                                    )
+                                    .toList(),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      icon: const Icon(Icons.more_vert),
+                    )
                 ],
               ),
             ],
@@ -204,14 +253,24 @@ class _PostContainerState extends State<PostContainer> {
               Row(
                 children: [
                   IconButton(
-                    onPressed: likePost,
+                    onPressed: () async {
+                      FirestoreMethods().likePost(
+                          widget.post.id,
+                          widget.currentUserId,
+                          widget.post.likes,
+                          await getLikeStatus());
+                      setState(() {
+                        _isLiked == getLikeStatus();
+                        _likesCount == getLikesCount();
+                      });
+                    },
                     icon: Icon(
                       _isLiked ? Icons.favorite : Icons.favorite_border,
                       color: _isLiked ? Colors.blue : Colors.black,
                     ),
                   ),
                   Text(
-                    _likesCount.toString() + ' Likes',
+                    ' $_likesCount Likes',
                   ),
                 ],
               ),

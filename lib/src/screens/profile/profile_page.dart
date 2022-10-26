@@ -1,7 +1,6 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, library_private_types_in_public_api
 
 import 'dart:typed_data';
-import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:squirrel_main/models/post.dart';
@@ -9,9 +8,11 @@ import 'package:squirrel_main/models/user.dart';
 import 'package:squirrel_main/repositories/user_repository.dart';
 import 'package:squirrel_main/services/auth.dart';
 import 'package:squirrel_main/services/database.dart';
-import 'package:squirrel_main/src/screens/edit_profile_screen.dart';
+import 'package:squirrel_main/services/firestore_methods.dart';
+import 'package:squirrel_main/src/screens/profile/edit_profile_screen.dart';
 import 'package:squirrel_main/src/screens/login_screen.dart';
-import 'package:squirrel_main/src/widgets/add_friend_button.dart';
+import 'package:squirrel_main/src/screens/profile/notification_screen.dart';
+import 'package:squirrel_main/src/widgets/follow_button.dart';
 import 'package:squirrel_main/src/widgets/post_container.dart';
 import 'package:squirrel_main/utils/colors.dart';
 import 'package:squirrel_main/utils/utils.dart';
@@ -37,7 +38,9 @@ class _ProfilePageUiState extends State<ProfilePageUi> {
   late final _isOwnProfilePage = widget.visitedUserId == widget.currentUserId;
 
   List<Post> _allPosts = [];
-  bool isFriends = false;
+  bool isFollowing = false;
+  bool isFollows = false;
+  int followers = 0;
   int _postsCount = 0;
   int _cullsCount = 0;
 
@@ -158,7 +161,17 @@ class _ProfilePageUiState extends State<ProfilePageUi> {
         actions: [
           _isOwnProfilePage
               ? IconButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NotificationsScreen(
+                          currentUserId: widget.currentUserId,
+                        ),
+                      ),
+                    );
+                    setState(() {});
+                  },
                   icon: Icon(Icons.notifications),
                   color: Colors.black,
                   iconSize: 35,
@@ -194,7 +207,7 @@ class _ProfilePageUiState extends State<ProfilePageUi> {
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
                                 buildStatColumn(_postsCount, 'posts'),
-                                buildStatColumn(50, 'friends'),
+                                buildStatColumn(followers, 'followers'),
                                 buildStatColumn(_cullsCount, 'culls'),
                               ],
                             ),
@@ -203,7 +216,7 @@ class _ProfilePageUiState extends State<ProfilePageUi> {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceEvenly,
                                     children: [
-                                      FriendButton(
+                                      FollowButton(
                                         text: 'Edit Profile',
                                         backgroundColor: Colors.black,
                                         textColor: primaryColor,
@@ -222,19 +235,37 @@ class _ProfilePageUiState extends State<ProfilePageUi> {
                                       )
                                     ],
                                   )
-                                : Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      FriendButton(
-                                        text: 'Add Friend',
+                                : isFollowing
+                                    ? FollowButton(
+                                        text: 'Unfollow',
                                         backgroundColor: Colors.black,
                                         textColor: primaryColor,
                                         borderColor: Colors.grey,
-                                        function: () async {},
+                                        function: () async {
+                                          await FirestoreMethods().followUser(
+                                              widget.currentUserId,
+                                              widget.visitedUserId);
+                                          setState(() {
+                                            isFollowing = false;
+                                            followers--;
+                                          });
+                                        },
                                       )
-                                    ],
-                                  )
+                                    : FollowButton(
+                                        text: 'Follow',
+                                        backgroundColor: Colors.black,
+                                        textColor: primaryColor,
+                                        borderColor: Colors.grey,
+                                        function: () async {
+                                          FirestoreMethods().followUser(
+                                              widget.currentUserId,
+                                              widget.visitedUserId);
+                                          setState(() {
+                                            isFollowing = true;
+                                            followers++;
+                                          });
+                                        },
+                                      ),
                           ],
                         ),
                       ),

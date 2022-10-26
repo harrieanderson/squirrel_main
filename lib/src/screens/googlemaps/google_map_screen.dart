@@ -1,14 +1,18 @@
 // ignore_for_file: no_logic_in_create_state, prefer_const_constructors, unnecessary_new
 import 'dart:async';
-
+import 'dart:ffi';
+import 'package:rxdart/rxdart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:geoflutterfire/geoflutterfire.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:location/location.dart';
 import 'package:squirrel_main/models/cull_model.dart';
 import 'package:squirrel_main/models/sighting_model.dart';
 import 'package:squirrel_main/services/database.dart';
 import 'package:squirrel_main/src/screens/googlemaps/position_services.dart';
+import 'package:squirrel_main/utils/constant.dart';
 import 'package:squirrel_main/utils/utils.dart';
 
 class GoogleMapScreen extends StatefulWidget {
@@ -24,6 +28,9 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
   List<Marker> markers = [];
   Completer<GoogleMapController> _controller = Completer();
   Set<Polyline> _polylines = Set<Polyline>();
+  Location location = new Location();
+  Geoflutterfire geo = Geoflutterfire();
+  var isLoading = true;
 
   late GoogleMapController newGoogleMapController;
 
@@ -35,6 +42,27 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
       ),
     );
   }
+
+  // getMarkerData() {
+  //   cullsRef.get().then((QuerySnapshot querySnapshot) {
+  //     querySnapshot.docs.forEach((doc) {
+  //       initMarker(doc.data(), doc.id);
+  //     });
+  //   });
+  // }
+
+  // void initMarker(specify, specifyId) async {
+  //   var markerIdVal = specifyId;
+  //   final MarkerId markerId = MarkerId(markerIdVal);
+  //   final Marker marker = Marker(
+  //       markerId: markerId,
+  //       position:
+  //           LatLng(specify['location'].latitude, specify['location'].longitude),
+  //       infoWindow: InfoWindow(title: specify['name']));
+  //   setState(() {
+  //     markers[markerId] = marker;
+  //   });
+  // }
 
   Future<String> promptForGender(context) async {
     return await showDialog(
@@ -176,7 +204,8 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
                     final _gender = await promptForGender(context);
                     Cull cull = Cull(
                         gender: _gender,
-                        location: markers.last.position.toString(),
+                        location: GeoPoint(markers.last.position.latitude,
+                            markers.last.position.longitude),
                         timestamp: Timestamp.fromDate(DateTime.now()),
                         uid: widget.uid);
                     DatabaseMethods.addCull(cull);
@@ -200,7 +229,8 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
                         timestamp: Timestamp.fromDate(
                           DateTime.now(),
                         ),
-                        location: markers.last.position.toString());
+                        location: GeoPoint(markers.last.position.latitude,
+                            markers.last.position.longitude));
                     DatabaseMethods.addSighting(sighting);
                     showSnackBar(
                       context,

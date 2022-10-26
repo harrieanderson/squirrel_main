@@ -135,7 +135,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
                             userModel.username,
                             userModel.photoUrl);
                         _commentController.clear();
-                        print(' the post ID is $widget.post.id');
+                        print(' the post ID is ${widget.post.id}');
                       },
                       child: Container(
                         padding: EdgeInsets.symmetric(

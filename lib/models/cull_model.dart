@@ -5,7 +5,7 @@ class Cull {
   String uid;
   String gender;
   Timestamp timestamp;
-  String location;
+  GeoPoint location;
 
   Cull(
       {required this.gender,

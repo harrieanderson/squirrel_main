@@ -86,7 +86,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
                     text: _postText,
                     image: image,
                     timestamp: Timestamp.fromDate(DateTime.now()),
-                    likes: 0,
+                    likes: [],
                     id: postId,
                   );
                   showSnackBar(context, 'posted!');
