@@ -3,9 +3,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:squirrel_main/src/screens/add_post_screen.dart';
+import 'package:squirrel_main/src/screens/posts/add_post_screen.dart';
 import 'package:squirrel_main/src/screens/googlemaps/google_map_screen.dart';
-import 'package:squirrel_main/src/screens/home_screen.dart';
+import 'package:squirrel_main/src/screens/posts/home_screen.dart';
 import 'package:squirrel_main/src/screens/messages/message.dart';
 import 'package:squirrel_main/src/screens/profile/profile_page.dart';
 
@@ -23,10 +23,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
     ),
     GoogleMapScreen(
         key: UniqueKey(), uid: FirebaseAuth.instance.currentUser!.uid),
-    // Center(
-    //   child: Text('3'),
-    // ),
-    MessagesScreen(),
+    MessagesScreen(
+      currentUserId: FirebaseAuth.instance.currentUser!.uid,
+    ),
     ProfilePageUi(
         visitedUserId: FirebaseAuth.instance.currentUser!.uid,
         currentUserId: FirebaseAuth.instance.currentUser!.uid)

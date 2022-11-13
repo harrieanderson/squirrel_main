@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:squirrel_main/models/user.dart';
 import 'package:squirrel_main/services/auth.dart';
-import 'package:squirrel_main/src/screens/home_screen.dart';
+import 'package:squirrel_main/src/screens/posts/home_screen.dart';
 import 'package:squirrel_main/src/screens/navigation_screen.dart';
 import 'package:squirrel_main/utils/utils.dart';
 

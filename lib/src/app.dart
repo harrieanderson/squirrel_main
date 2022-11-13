@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:squirrel_main/services/auth.dart';
-import 'package:squirrel_main/src/screens/login_screen.dart';
+import 'package:squirrel_main/src/screens/login/login_screen.dart';
 import 'package:squirrel_main/src/screens/navigation_screen.dart';
 
 class App extends StatelessWidget {

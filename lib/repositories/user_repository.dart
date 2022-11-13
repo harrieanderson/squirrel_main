@@ -13,7 +13,8 @@ class UserRepository {
         photoUrl: userData['photoUrl'],
         email: userData['email'],
         bio: userData['bio'],
-        friends: userData['friends'],
+        following: userData['following'],
+        followers: userData['followers'],
         culls: userData['culls']);
   }
 }

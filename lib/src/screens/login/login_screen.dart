@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:squirrel_main/services/auth.dart';
 import 'package:squirrel_main/src/screens/navigation_screen.dart';
-import 'package:squirrel_main/src/screens/registration_screen.dart';
+import 'package:squirrel_main/src/screens/login/registration_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);

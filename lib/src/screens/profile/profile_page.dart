@@ -1,6 +1,7 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, library_private_types_in_public_api
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, library_private_types_in_public_api, unrelated_type_equality_checks
 
 import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:squirrel_main/models/post.dart';
@@ -10,11 +11,12 @@ import 'package:squirrel_main/services/auth.dart';
 import 'package:squirrel_main/services/database.dart';
 import 'package:squirrel_main/services/firestore_methods.dart';
 import 'package:squirrel_main/src/screens/profile/edit_profile_screen.dart';
-import 'package:squirrel_main/src/screens/login_screen.dart';
+import 'package:squirrel_main/src/screens/login/login_screen.dart';
 import 'package:squirrel_main/src/screens/profile/notification_screen.dart';
 import 'package:squirrel_main/src/widgets/follow_button.dart';
 import 'package:squirrel_main/src/widgets/post_container.dart';
 import 'package:squirrel_main/utils/colors.dart';
+import 'package:squirrel_main/utils/constant.dart';
 import 'package:squirrel_main/utils/utils.dart';
 
 const _kAvatarRadius = 45.0;
@@ -39,13 +41,13 @@ class _ProfilePageUiState extends State<ProfilePageUi> {
 
   List<Post> _allPosts = [];
   bool isFollowing = false;
-  bool isFollows = false;
-  int followers = 0;
+
+  int _followersCount = 0;
   int _postsCount = 0;
   int _cullsCount = 0;
 
   getPostsCount() async {
-    int postsCount = await DatabaseMethods.postsNumb(widget.currentUserId);
+    int postsCount = await DatabaseMethods.postsNumb(widget.visitedUserId);
     if (mounted) {
       setState(() {
         _postsCount = postsCount;
@@ -53,8 +55,18 @@ class _ProfilePageUiState extends State<ProfilePageUi> {
     }
   }
 
+  getFollowersCount() async {
+    int followersCount =
+        await DatabaseMethods.followersNum(widget.visitedUserId);
+    if (mounted) {
+      setState(() {
+        _followersCount = followersCount;
+      });
+    }
+  }
+
   getCullCount() async {
-    int cullsCount = await DatabaseMethods.cullsCount(widget.currentUserId);
+    int cullsCount = await DatabaseMethods.cullsCount(widget.visitedUserId);
     if (mounted) {
       setState(() {
         _cullsCount = cullsCount;
@@ -62,37 +74,27 @@ class _ProfilePageUiState extends State<ProfilePageUi> {
     }
   }
 
-  // followOrUnfollow() {
-  //   if (isFollowing) {
-  //     unfollowUser();
-  //   } else {
-  //     followUser();
-  //   }
-  // }
+  Future<bool> getFollowingStatus() async {
+    DocumentSnapshot document = await usersRef
+        .doc(widget.currentUserId)
+        .collection('following')
+        .doc(widget.visitedUserId)
+        .get();
 
-  // followUser() {
-  //   DatabaseMethods.followUser(widget.currentUserId, widget.visitedUserId);
-  //   setState(() {
-  //     isFollowing = true;
-  //     _followersCount++;
-  //   });
-  // }
-
-  // setupIsFollowing() async {
-  //   bool isFollowingThisUser = await DatabaseMethods.isFollowingUser(
-  //       widget.currentUserId, widget.visitedUserId);
-  //   setState(() {
-  //     isFollowing = isFollowingThisUser;
-  //   });
-  // }
-
-  // unFollowUser() {
-  //   DatabaseMethods.unFollowUser(widget.currentUserId, widget.visitedUserId);
-  //   setState(() {
-  //     isFollowing = false;
-  //     _followersCount--;
-  //   });
-  // }
+    if (document.exists) {
+      isFollowing = document.exists;
+      setState(() {
+        isFollowing = document.exists;
+      });
+      return true;
+    } else {
+      isFollowing = document.exists;
+      setState(() {
+        isFollowing = document.exists;
+      });
+      return false;
+    }
+  }
 
   showProfilePosts(UserModel author) {
     return Expanded(
@@ -127,6 +129,8 @@ class _ProfilePageUiState extends State<ProfilePageUi> {
     getAllPosts();
     getPostsCount();
     getCullCount();
+    getFollowingStatus();
+    getFollowersCount();
   }
 
   void selectImage() async {
@@ -155,7 +159,7 @@ class _ProfilePageUiState extends State<ProfilePageUi> {
                   Navigator.of(context).pop();
                 },
                 icon: Icon(Icons.arrow_back)),
-        title: Text('profile page'),
+        title: Text('Profile Page'),
         backgroundColor: Colors.blue,
         elevation: 0,
         actions: [
@@ -180,7 +184,7 @@ class _ProfilePageUiState extends State<ProfilePageUi> {
         ],
       ),
       body: FutureBuilder<UserModel>(
-          future: UserRepository.getUser(widget.currentUserId),
+          future: UserRepository.getUser(widget.visitedUserId),
           builder: (context, snapshot) {
             final userModel = snapshot.data;
 
@@ -207,7 +211,7 @@ class _ProfilePageUiState extends State<ProfilePageUi> {
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
                                 buildStatColumn(_postsCount, 'posts'),
-                                buildStatColumn(followers, 'followers'),
+                                buildStatColumn(_followersCount, 'followers'),
                                 buildStatColumn(_cullsCount, 'culls'),
                               ],
                             ),
@@ -238,34 +242,34 @@ class _ProfilePageUiState extends State<ProfilePageUi> {
                                 : isFollowing
                                     ? FollowButton(
                                         text: 'Unfollow',
-                                        backgroundColor: Colors.black,
-                                        textColor: primaryColor,
+                                        backgroundColor: Colors.white,
+                                        textColor: Colors.black,
                                         borderColor: Colors.grey,
-                                        function: () async {
-                                          await FirestoreMethods().followUser(
-                                              widget.currentUserId,
-                                              widget.visitedUserId);
+                                        function: () {
+                                          DatabaseMethods().unFollowUser(
+                                            widget.visitedUserId,
+                                          );
                                           setState(() {
                                             isFollowing = false;
-                                            followers--;
+                                            _followersCount--;
                                           });
                                         },
                                       )
                                     : FollowButton(
                                         text: 'Follow',
-                                        backgroundColor: Colors.black,
-                                        textColor: primaryColor,
-                                        borderColor: Colors.grey,
-                                        function: () async {
-                                          FirestoreMethods().followUser(
-                                              widget.currentUserId,
-                                              widget.visitedUserId);
+                                        backgroundColor: Colors.blue,
+                                        textColor: Colors.white,
+                                        borderColor: Colors.blue,
+                                        function: () {
+                                          DatabaseMethods().followUser(
+                                            widget.visitedUserId,
+                                          );
                                           setState(() {
                                             isFollowing = true;
-                                            followers++;
+                                            _followersCount++;
                                           });
                                         },
-                                      ),
+                                      )
                           ],
                         ),
                       ),

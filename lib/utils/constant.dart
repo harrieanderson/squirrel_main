@@ -5,6 +5,8 @@ final _fireStore = FirebaseFirestore.instance;
 
 final usersRef = _fireStore.collection('users');
 
+final followingRef = _fireStore.collection('following');
+
 final followersRef = _fireStore.collection('followers');
 
 final storageRef = FirebaseStorage.instance.ref();

@@ -9,6 +9,7 @@ import 'package:squirrel_main/models/cull_model.dart';
 import 'package:squirrel_main/models/post.dart';
 import 'package:squirrel_main/models/sighting_model.dart';
 import 'package:squirrel_main/models/user.dart';
+import 'package:squirrel_main/repositories/user_repository.dart';
 import 'package:squirrel_main/utils/constant.dart';
 
 class DatabaseMethods {
@@ -22,7 +23,7 @@ class DatabaseMethods {
 
   static Future<int> followersNum(String userId) async {
     QuerySnapshot followersSnapshot =
-        await followersRef.doc(userId).collection('followers').get();
+        await usersRef.doc(userId).collection('followers').get();
     return followersSnapshot.docs.length;
   }
 
@@ -32,7 +33,6 @@ class DatabaseMethods {
     return commentsSnapshot.docs.length;
   }
 
-// TODO: FINISH LIKES COUNT LOGCI
   static Future<int> likesNum(String postId) async {
     QuerySnapshot likesSnapshot =
         await likesRef.doc(postId).collection('userLikes').get();
@@ -61,6 +61,46 @@ class DatabaseMethods {
       return UserModel.fromSnap(doc);
     }).toList();
     return list;
+  }
+
+  static Future<List<UserModel>> getFollowersToMessage(String username) async {
+    final usersSnapshot = await usersRef.get();
+    print(usersSnapshot.docs);
+
+    final list = usersSnapshot.docs.map((doc) {
+      return UserModel.fromSnap(doc);
+    }).toList();
+    return list;
+  }
+
+  Future<void> followUser(
+    uid,
+  ) async {
+    await usersRef
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .collection('following')
+        .doc(uid)
+        .set({});
+
+    await usersRef
+        .doc(uid)
+        .collection('followers')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .set({});
+  }
+
+  Future<void> unFollowUser(uid) async {
+    await usersRef
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .collection('following')
+        .doc(uid)
+        .delete();
+
+    await usersRef
+        .doc(uid)
+        .collection('followers')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .delete();
   }
 
   Stream<QuerySnapshot> getUserByUsername(String username) {
@@ -185,17 +225,43 @@ class DatabaseMethods {
     return homeScreenPosts;
   }
 
-  static void likePost(String currentUserId, Post post) {
-    DocumentReference postDocProfile =
-        postsRef.doc(post.authorId).collection('userPosts').doc(post.id);
-    postDocProfile.get().then((doc) {
-      int likes = doc['likes'];
-      postDocProfile.update({'likes': likes + 1});
-    });
+  static Future<List<UserModel>> getUsersToMessage(String currentUserId) async {
+    QuerySnapshot userMessageSnap =
+        await usersRef.doc(currentUserId).collection('followers').get();
+    List<UserModel> usersToMessage =
+        userMessageSnap.docs.map((doc) => UserModel.fromSnap(doc)).toList();
 
-    likesRef.doc(post.id).collection('postLikes').doc(currentUserId).set({});
+    return usersToMessage;
+  }
 
-    // addActivity(currentUserId, post, false, null);
+  Future likePost(
+      Post post, String currentUserId, List likes, bool current) async {
+    String res = "Some error occurred";
+    try {
+      if (current) {
+        likesRef
+            .doc(post.id)
+            .collection('userLikes')
+            .doc(currentUserId)
+            .delete();
+      } else {
+        likesRef
+            .doc(post.id)
+            .collection('userLikes')
+            .doc(currentUserId)
+            .set({});
+        addActivity(
+          currentUserId,
+          post,
+          false,
+          '',
+        );
+      }
+      res = 'success';
+    } catch (err) {
+      res = err.toString();
+    }
+    return res;
   }
 
   static void unlikePost(String currentUserId, Post post) {
@@ -239,18 +305,19 @@ class DatabaseMethods {
   }
 
   static void addActivity(
-      String currentUserId, Post post, bool follow, String followedUserId) {
+      String currentUserId, Post? post, bool follow, String followedUserId) {
     if (follow) {
       activitiesRef.doc(followedUserId).collection('userActivities').add({
         'fromUserId': currentUserId,
         'timestamp': Timestamp.fromDate(DateTime.now()),
-        'follow': true
+        "follow": true,
       });
     } else {
-      activitiesRef.doc(post.id).collection('userActivities').add({
+      //like
+      activitiesRef.doc(post!.id).collection('userActivities').add({
         'fromUserId': currentUserId,
         'timestamp': Timestamp.fromDate(DateTime.now()),
-        'follow': false
+        "follow": false,
       });
     }
   }

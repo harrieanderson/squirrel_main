@@ -64,7 +64,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           photoUrl: profilePictureUrl,
           email: widget.user.email,
           bio: _bio,
-          friends: widget.user.friends,
+          following: widget.user.following,
+          followers: widget.user.followers,
           culls: widget.user.culls);
       DatabaseMethods.updateUserInfo(user);
       Navigator.pop(context);

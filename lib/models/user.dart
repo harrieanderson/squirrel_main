@@ -8,7 +8,9 @@ class UserModel {
   String firstName;
   String secondName;
   String bio;
-  List friends;
+  List following;
+  List followers;
+
   int culls;
 
   UserModel(
@@ -19,7 +21,8 @@ class UserModel {
       required this.photoUrl,
       required this.email,
       required this.bio,
-      required this.friends,
+      required this.following,
+      required this.followers,
       required this.culls});
 
   static UserModel fromSnap(DocumentSnapshot snap) {
@@ -33,7 +36,8 @@ class UserModel {
         email: snapshot["email"],
         photoUrl: snapshot["photoUrl"],
         bio: snapshot["bio"],
-        friends: snapshot["friends"],
+        following: snapshot["following"],
+        followers: snapshot["followers"],
         culls: snapshot['culls']);
   }
 
@@ -45,7 +49,8 @@ class UserModel {
         "email": email,
         "photoUrl": photoUrl,
         "bio": bio,
-        "friends": friends,
+        "following": following,
+        "followers": followers,
         "culls": culls,
       };
 }

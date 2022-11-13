@@ -1,17 +1,18 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/container.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:squirrel_main/models/activity.dart';
 import 'package:squirrel_main/models/user.dart';
 import 'package:squirrel_main/services/database.dart';
 import 'package:squirrel_main/utils/constant.dart';
 
+import '../../../models/activity.dart';
+
 class NotificationsScreen extends StatefulWidget {
   final String currentUserId;
-  const NotificationsScreen({super.key, required this.currentUserId});
 
+  const NotificationsScreen({Key? key, required this.currentUserId})
+      : super(key: key);
   @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
+  _NotificationsScreenState createState() => _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
@@ -39,12 +40,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               children: [
                 ListTile(
                   leading: CircleAvatar(
-                    radius: 20,
-                    backgroundImage: NetworkImage(user.photoUrl),
-                  ),
+                      radius: 20, backgroundImage: NetworkImage(user.photoUrl)),
                   title: activity.follow == true
                       ? Text('${user.username} follows you')
-                      : Text('${user.username} liked your post '),
+                      : Text('${user.username} liked your tweet'),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -56,7 +55,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ],
             );
           }
-          ;
         });
   }
 
@@ -74,18 +72,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           elevation: 0.5,
           title: Text(
             'Notifications',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         body: RefreshIndicator(
           onRefresh: () => setupActivities(),
           child: ListView.builder(
-            itemBuilder: (BuildContext context, int index) {
-              Activity activity = _activities[index];
-              return buildActivity(activity);
-            },
-            itemCount: _activities.length,
-          ),
+              itemCount: _activities.length,
+              itemBuilder: (BuildContext context, int index) {
+                Activity activity = _activities[index];
+                return buildActivity(activity);
+              }),
         ));
   }
 }

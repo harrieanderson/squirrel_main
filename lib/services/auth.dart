@@ -61,7 +61,8 @@ class Authenticator {
             email: email,
             photoUrl: photoUrl,
             culls: 0,
-            friends: [],
+            following: [],
+            followers: [],
             bio: bio);
 
         // add user to our database

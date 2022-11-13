@@ -8,7 +8,7 @@ import 'package:squirrel_main/models/user.dart';
 import 'package:squirrel_main/repositories/user_repository.dart';
 import 'package:squirrel_main/services/database.dart';
 import 'package:squirrel_main/services/firestore_methods.dart';
-import 'package:squirrel_main/src/screens/comment_screen.dart';
+import 'package:squirrel_main/src/screens/posts/comment_screen.dart';
 import 'package:squirrel_main/src/screens/profile/profile_page.dart';
 import 'package:squirrel_main/utils/constant.dart';
 
@@ -254,8 +254,8 @@ class _PostContainerState extends State<PostContainer> {
                 children: [
                   IconButton(
                     onPressed: () async {
-                      FirestoreMethods().likePost(
-                          widget.post.id,
+                      DatabaseMethods().likePost(
+                          widget.post,
                           widget.currentUserId,
                           widget.post.likes,
                           await getLikeStatus());
