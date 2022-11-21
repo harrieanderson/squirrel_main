@@ -9,7 +9,6 @@ import 'package:squirrel_main/models/user.dart';
 import 'package:squirrel_main/repositories/user_repository.dart';
 import 'package:squirrel_main/services/auth.dart';
 import 'package:squirrel_main/services/database.dart';
-import 'package:squirrel_main/services/firestore_methods.dart';
 import 'package:squirrel_main/src/screens/profile/edit_profile_screen.dart';
 import 'package:squirrel_main/src/screens/login/login_screen.dart';
 import 'package:squirrel_main/src/screens/profile/notification_screen.dart';

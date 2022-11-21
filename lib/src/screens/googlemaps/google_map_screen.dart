@@ -1,7 +1,5 @@
 // ignore_for_file: no_logic_in_create_state, prefer_const_constructors, unnecessary_new
 import 'dart:async';
-import 'dart:ffi';
-import 'package:rxdart/rxdart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geoflutterfire/geoflutterfire.dart';
@@ -12,7 +10,6 @@ import 'package:squirrel_main/models/cull_model.dart';
 import 'package:squirrel_main/models/sighting_model.dart';
 import 'package:squirrel_main/services/database.dart';
 import 'package:squirrel_main/src/screens/googlemaps/position_services.dart';
-import 'package:squirrel_main/utils/constant.dart';
 import 'package:squirrel_main/utils/utils.dart';
 
 class GoogleMapScreen extends StatefulWidget {

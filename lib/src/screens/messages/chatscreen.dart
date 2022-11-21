@@ -1,3 +1,5 @@
+// ignore_for_file: must_be_immutable
+
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -5,13 +7,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:squirrel_main/utils/constant.dart';
 import 'package:uuid/uuid.dart';
 
 class ChatRoom extends StatelessWidget {
   final Map<String, dynamic> userMap;
   final String chatRoomId;
 
-  ChatRoom({required this.chatRoomId, required this.userMap});
+  ChatRoom({super.key, required this.chatRoomId, required this.userMap});
 
   final TextEditingController _message = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -101,7 +104,7 @@ class ChatRoom extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: FutureBuilder<DocumentSnapshot>(
-          future: _firestore.collection("users").doc(userMap['uid']).get(),
+          future: usersRef.doc(userMap['uid']).get(),
           builder: (context, snapshot) {
             if (snapshot.data != null) {
               return Row(
@@ -123,7 +126,7 @@ class ChatRoom extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Container(
+            SizedBox(
               height: size.height / 1.25,
               width: size.width,
               child: StreamBuilder<QuerySnapshot>(
@@ -154,31 +157,34 @@ class ChatRoom extends StatelessWidget {
               height: size.height / 10,
               width: size.width,
               alignment: Alignment.center,
-              child: Container(
-                height: size.height / 12,
-                width: size.width / 1.1,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      height: size.height / 17,
-                      width: size.width / 1.3,
-                      child: TextField(
-                        controller: _message,
-                        decoration: InputDecoration(
-                            suffixIcon: IconButton(
-                              onPressed: () => getImage(),
-                              icon: Icon(Icons.photo),
-                            ),
-                            hintText: "Send Message",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            )),
+              child: SizedBox(
+                child: SizedBox(
+                  height: size.height / 12,
+                  width: size.width / 1.1,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        height: size.height / 17,
+                        width: size.width / 1.3,
+                        child: TextField(
+                          controller: _message,
+                          decoration: InputDecoration(
+                              suffixIcon: IconButton(
+                                onPressed: () => getImage(),
+                                icon: Icon(Icons.photo),
+                              ),
+                              hintText: "Send Message",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              )),
+                        ),
                       ),
-                    ),
-                    IconButton(
-                        icon: Icon(Icons.send), onPressed: onSendMessage),
-                  ],
+                      IconButton(
+                          icon: const Icon(Icons.send),
+                          onPressed: onSendMessage),
+                    ],
+                  ),
                 ),
               ),
             ),

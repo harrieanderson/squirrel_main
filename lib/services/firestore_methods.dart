@@ -3,6 +3,7 @@ import 'package:squirrel_main/utils/constant.dart';
 import 'package:squirrel_main/services/database.dart';
 
 class FirestoreMethods {
+  // makes comment to a post
   Future<String> postComment(String postId, String text, String uid,
       String name, String profilePic) async {
     String res = 'Some Error occurred';

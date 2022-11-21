@@ -2,7 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:squirrel_main/helperfunctions/sharedpref_helper.dart';
+import 'package:squirrel_main/models/user.dart';
+import 'package:squirrel_main/repositories/user_repository.dart';
+import 'package:squirrel_main/services/database.dart';
 import 'package:squirrel_main/src/screens/messages/chatscreen.dart';
+import 'package:squirrel_main/src/widgets/user_container.dart';
+import 'package:squirrel_main/utils/constant.dart';
 
 class MessagesScreen extends StatefulWidget {
   final String currentUserId;
@@ -17,6 +22,7 @@ class MessagesScreen extends StatefulWidget {
 class _MessagesScreenState extends State<MessagesScreen>
     with WidgetsBindingObserver {
   Map<String, dynamic>? userMap;
+  List<UserModel> _usersToMessage = [];
   bool isLoading = false;
   final TextEditingController _search = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -47,6 +53,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     }
   }
 
+  // creates chatRoomId
   String chatRoomId(String user1, String user2) {
     if (user1[0].toLowerCase().codeUnits[0] >
         user2.toLowerCase().codeUnits[0]) {
@@ -76,6 +83,94 @@ class _MessagesScreenState extends State<MessagesScreen>
     });
   }
 
+  clearSearch() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _search.clear());
+    setState(() {
+      _search.text = '';
+    });
+  }
+
+  setUpUsersToMessage() async {
+    List<UserModel> usersToMessage =
+        await DatabaseMethods.getFollowersToMessage(widget.currentUserId);
+    if (mounted) {
+      setState(() {
+        _usersToMessage = usersToMessage;
+      });
+    }
+  }
+
+  buildUserToMessage(UserModel follower) {
+    return StreamBuilder(
+        stream: usersRef.doc().snapshots(),
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          if (!snapshot.hasData) {
+            return SizedBox.shrink();
+          } else {
+            UserModel user = UserModel.fromSnap(snapshot.data);
+            return Column(
+              children: [
+                ListTile(
+                  onTap: () {
+                    String roomId = chatRoomId(widget.currentUserId, user.uid);
+
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ChatRoom(
+                          chatRoomId: roomId,
+                          userMap: userMap!,
+                        ),
+                      ),
+                    );
+                  },
+                  leading: CircleAvatar(
+                    backgroundImage: NetworkImage(user.photoUrl),
+                  ),
+                  title: Text(
+                    user.username,
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  subtitle: Text(user.email),
+                )
+              ],
+            );
+          }
+        });
+  }
+
+  userTile() {
+    return ListTile(
+      onTap: () {
+        String roomId = chatRoomId(widget.currentUserId, userMap!['uid']);
+
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ChatRoom(
+              chatRoomId: roomId,
+              userMap: userMap!,
+            ),
+          ),
+        );
+      },
+      leading: CircleAvatar(
+        backgroundImage: NetworkImage(userMap!['photoUrl']),
+      ),
+      title: Text(
+        userMap!['username'],
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: 17,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(userMap!['email']),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -83,81 +178,81 @@ class _MessagesScreenState extends State<MessagesScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text("Chat Screen"),
-        actions: [],
+        actions: const [],
       ),
       body: isLoading
           ? Center(
-              child: Container(
+              child: SizedBox(
                 height: size.height / 20,
                 width: size.height / 20,
-                child: CircularProgressIndicator(),
+                child: const CircularProgressIndicator(),
               ),
             )
-          : Column(
-              children: [
-                SizedBox(
-                  height: size.height / 20,
-                ),
-                Container(
-                  height: size.height / 14,
-                  width: size.width,
-                  alignment: Alignment.center,
-                  child: Container(
-                    height: size.height / 14,
-                    width: size.width / 1.15,
-                    child: TextField(
-                      controller: _search,
-                      decoration: InputDecoration(
-                        hintText: "Search",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+          : FutureBuilder<UserModel>(
+              future: UserRepository.getUser(widget.currentUserId),
+              builder: (context, snapshot) {
+                final userModel = snapshot.data;
+                if (userModel == null) {
+                  return Container();
+                }
+                return ListView(
+                  children: [
+                    Column(
+                      children: [
+                        SizedBox(
+                          height: size.height / 20,
                         ),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  height: size.height / 50,
-                ),
-                ElevatedButton(
-                  onPressed: onSearch,
-                  child: Text("Search"),
-                ),
-                SizedBox(
-                  height: size.height / 30,
-                ),
-                userMap != null
-                    ? ListTile(
-                        onTap: () {
-                          String roomId =
-                              chatRoomId(widget.currentUserId, userMap!['uid']);
-
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => ChatRoom(
-                                chatRoomId: roomId,
-                                userMap: userMap!,
+                        Container(
+                          height: size.height / 14,
+                          width: size.width,
+                          alignment: Alignment.center,
+                          child: SizedBox(
+                            height: size.height / 14,
+                            width: size.width / 1.15,
+                            child: TextField(
+                              controller: _search,
+                              decoration: InputDecoration(
+                                hintText: "Search",
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                suffixIcon: IconButton(
+                                  onPressed: () {
+                                    clearSearch();
+                                  },
+                                  icon: Icon(Icons.clear),
+                                ),
                               ),
                             ),
-                          );
-                        },
-                        leading: CircleAvatar(
-                          backgroundImage: NetworkImage(userMap!['photoUrl']),
-                        ),
-                        title: Text(
-                          userMap!['username'],
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        subtitle: Text(userMap!['email']),
-                        trailing: Icon(Icons.chat, color: Colors.black),
-                      )
-                    : Container(),
-              ],
-            ),
+                        SizedBox(
+                          height: size.height / 50,
+                        ),
+                        ElevatedButton(
+                          onPressed: onSearch,
+                          child: Text("Search"),
+                        ),
+                        SizedBox(
+                          height: size.height / 30,
+                        ),
+                        userMap != null
+                            ? RefreshIndicator(
+                                onRefresh: () => setUpUsersToMessage(),
+                                child: ListView.builder(
+                                    itemCount: _usersToMessage.length,
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
+                                      UserModel user = _usersToMessage[index];
+                                      return buildUserToMessage(user);
+                                    }),
+                              )
+                            : Container()
+                      ],
+                    ),
+                  ],
+                );
+              }),
     );
   }
 }

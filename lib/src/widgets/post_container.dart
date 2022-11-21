@@ -281,7 +281,6 @@ class _PostContainerState extends State<PostContainer> {
                     if (userModel == null) {
                       return Container();
                     }
-
                     return GestureDetector(
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
