@@ -28,16 +28,16 @@
 //         return GestureDetector(
 //           child: Container(
 //             onTap: () {
-//               // String roomId = chatRoomId(widget.currentUserId, userMap!['uid']);
+//               String roomId = chatRoomId(widget.currentUserId, userMap!['uid']);
         
-//               // Navigator.of(context).push(
-//               //   MaterialPageRoute(
-//               //     builder: (_) => ChatRoom(
-//               //       chatRoomId: roomId,
-//               //       userMap: userMap!,
-//               //     ),
-//               //   ),
-//               // );
+//               Navigator.of(context).push(
+//                 MaterialPageRoute(
+//                   builder: (_) => ChatRoom(
+//                     chatRoomId: roomId,
+//                     userMap: userMap!,
+//                   ),
+//                 ),
+//               );
 //             },
 //             leading: CircleAvatar(
 //               backgroundImage: NetworkImage(userModel.photoUrl),

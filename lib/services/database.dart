@@ -77,7 +77,7 @@ class DatabaseMethods {
     return list;
   }
 
-  // takes care of following AND unfollowing users
+  // takes care of following users
   Future<void> followUser(
     uid,
   ) async {
@@ -92,8 +92,10 @@ class DatabaseMethods {
         .collection('followers')
         .doc(FirebaseAuth.instance.currentUser!.uid)
         .set({});
+    // addActivity(uid, null, true, followedUserId)
   }
 
+  // takes care of unfollowing users
   Future<void> unFollowUser(uid) async {
     await usersRef
         .doc(FirebaseAuth.instance.currentUser!.uid)
@@ -192,12 +194,7 @@ class DatabaseMethods {
             .collection('userLikes')
             .doc(currentUserId)
             .set({});
-        addActivity(
-          currentUserId,
-          post,
-          false,
-          '',
-        );
+        // addActivity(currentUserId, post, false, '');
       }
       res = 'success';
     } catch (err) {

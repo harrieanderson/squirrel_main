@@ -1,6 +1,7 @@
 // ignore_for_file: file_names, unrelated_type_equality_checks
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:flutter/material.dart';
 import 'package:squirrel_main/models/post.dart';
@@ -43,14 +44,6 @@ class _PostContainerState extends State<PostContainer> {
     }
   }
 
-  // buildLikes() {
-  //   return StreamBuilder(
-  //     stream: getLikesCount(),
-  //     builder: ((context, snapshot) {
-  //       if (snapshot.hasData) {} return
-  //     }));
-  // }
-
   Future<bool> getLikeStatus() async {
     DocumentSnapshot document = await likesRef
         .doc(widget.post.id)
@@ -80,6 +73,22 @@ class _PostContainerState extends State<PostContainer> {
         _likesCount = likesCount;
       });
     }
+  }
+
+  addLikeToActivityFeed(UserModel user) {
+    return activitiesRef
+        .doc(widget.author.uid)
+        .collection('feedItems')
+        .doc(widget.post.id)
+        .set({
+      'type': 'like',
+      'username': user.username,
+      'userId': user.uid,
+      "photoUrl": user.photoUrl,
+      'postId': widget.post.id,
+      'mediaUrl': widget.post.image,
+      'timestamp': Timestamp.fromDate(DateTime.now()),
+    });
   }
 
   deletePost(String postId, String userId) async {
@@ -247,60 +256,84 @@ class _PostContainerState extends State<PostContainer> {
           SizedBox(
             height: 15,
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () async {
-                      DatabaseMethods().likePost(
-                          widget.post,
-                          widget.currentUserId,
-                          widget.post.likes,
-                          await getLikeStatus());
-                      setState(() {
-                        _isLiked == getLikeStatus();
-                        _likesCount == getLikesCount();
-                      });
-                    },
-                    icon: Icon(
-                      _isLiked ? Icons.favorite : Icons.favorite_border,
-                      color: _isLiked ? Colors.blue : Colors.black,
-                    ),
-                  ),
-                  Text(
-                    ' $_likesCount Likes',
-                  ),
-                ],
-              ),
-              FutureBuilder<UserModel>(
-                  future: UserRepository.getUser(widget.currentUserId),
-                  builder: (context, snapshot) {
-                    final userModel = snapshot.data;
-                    if (userModel == null) {
-                      return Container();
-                    }
-                    return GestureDetector(
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => CommentsScreen(
-                            author: widget.author,
-                            post: widget.post,
-                            currentUserId: widget.currentUserId,
+          FutureBuilder<UserModel>(
+              future: UserRepository.getUser(widget.currentUserId),
+              builder: (context, snapshot) {
+                final userModel = snapshot.data;
+
+                if (userModel == null) {
+                  return Container();
+                }
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () async {
+                            DatabaseMethods().likePost(
+                                widget.post,
+                                widget.currentUserId,
+                                widget.post.likes,
+                                await getLikeStatus());
+                            setState(() {
+                              _isLiked == getLikeStatus();
+                              _likesCount == getLikesCount();
+                            });
+                            bool isNotPostOwner =
+                                widget.author.uid != widget.currentUserId;
+                            if (isNotPostOwner) {
+                              activitiesRef
+                                  .doc(widget.author.uid)
+                                  .collection('feedItems')
+                                  .add({
+                                "type": "like",
+                                "username": userModel.username,
+                                "userId": widget.currentUserId,
+                                "photoUrl": userModel.photoUrl,
+                                "postId": widget.post.id,
+                                "timestamp": Timestamp.fromDate(DateTime.now())
+                              });
+                            }
+                          },
+                          icon: Icon(
+                            _isLiked ? Icons.favorite : Icons.favorite_border,
+                            color: _isLiked ? Colors.blue : Colors.black,
                           ),
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.comment),
-                          Text('View all $_commentsCount comments')
-                        ],
-                      ),
-                    );
-                  }),
-            ],
-          ),
+                        Text(
+                          ' $_likesCount Likes',
+                        ),
+                      ],
+                    ),
+                    FutureBuilder<UserModel>(
+                        future: UserRepository.getUser(widget.currentUserId),
+                        builder: (context, snapshot) {
+                          final userModel = snapshot.data;
+                          if (userModel == null) {
+                            return Container();
+                          }
+                          return GestureDetector(
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => CommentsScreen(
+                                  author: widget.author,
+                                  post: widget.post,
+                                  currentUserId: widget.currentUserId,
+                                ),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.comment),
+                                Text('View all $_commentsCount comments')
+                              ],
+                            ),
+                          );
+                        }),
+                  ],
+                );
+              }),
           Divider(
             thickness: 5,
           )

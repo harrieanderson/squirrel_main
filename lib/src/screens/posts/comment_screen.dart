@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -25,8 +27,6 @@ class CommentsScreen extends StatefulWidget {
 }
 
 class _CommentsScreenState extends State<CommentsScreen> {
-  List<Comment> _comments = [];
-
   final TextEditingController _commentController = TextEditingController();
   @override
   void dispose() {
@@ -98,7 +98,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
           margin: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          padding: EdgeInsets.only(left: 16, right: 8),
+          padding: const EdgeInsets.only(left: 16, right: 8),
           child: FutureBuilder<UserModel>(
               future: UserRepository.getUser(widget.currentUserId),
               builder: (context, snapshot) {
@@ -134,8 +134,24 @@ class _CommentsScreenState extends State<CommentsScreen> {
                             userModel.uid,
                             userModel.username,
                             userModel.photoUrl);
+                        bool isNotPostOwner =
+                            widget.author.uid != widget.currentUserId;
+                        if (isNotPostOwner) {
+                          activitiesRef
+                              .doc(widget.author.uid)
+                              .collection('feedItems')
+                              .add({
+                            "type": "comment",
+                            "commentData": _commentController.text,
+                            "username": userModel.username,
+                            "userId": widget.currentUserId,
+                            "photoUrl": userModel.photoUrl,
+                            "image": widget.post.image,
+                            "postId": widget.post.id,
+                            "timestamp": Timestamp.fromDate(DateTime.now()),
+                          });
+                        }
                         _commentController.clear();
-                        print(' the post ID is ${widget.post.id}');
                       },
                       child: Container(
                         padding: EdgeInsets.symmetric(

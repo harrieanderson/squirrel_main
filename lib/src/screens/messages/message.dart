@@ -100,19 +100,27 @@ class _MessagesScreenState extends State<MessagesScreen>
     }
   }
 
-  buildUserToMessage(UserModel follower) {
+  showUsers() {
     return StreamBuilder(
-        stream: usersRef.doc().snapshots(),
-        builder: (BuildContext context, AsyncSnapshot snapshot) {
-          if (!snapshot.hasData) {
-            return SizedBox.shrink();
-          } else {
-            UserModel user = UserModel.fromSnap(snapshot.data);
-            return Column(
-              children: [
-                ListTile(
+        stream: commentsRef
+            .doc(widget.currentUserId)
+            .collection('followers')
+            .orderBy('datePublished', descending: true)
+            .snapshots(),
+        builder: ((context,
+            AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+          return ListView.builder(
+            shrinkWrap: true,
+            itemCount: snapshot.data!.docs.length,
+            itemBuilder: ((context, index) => ListTile(
                   onTap: () {
-                    String roomId = chatRoomId(widget.currentUserId, user.uid);
+                    String roomId =
+                        chatRoomId(widget.currentUserId, userMap!['uid']);
 
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -124,22 +132,20 @@ class _MessagesScreenState extends State<MessagesScreen>
                     );
                   },
                   leading: CircleAvatar(
-                    backgroundImage: NetworkImage(user.photoUrl),
+                    backgroundImage: NetworkImage(userMap!['photoUrl']),
                   ),
                   title: Text(
-                    user.username,
+                    userMap!['username'],
                     style: TextStyle(
                       color: Colors.black,
                       fontSize: 17,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  subtitle: Text(user.email),
-                )
-              ],
-            );
-          }
-        });
+                  subtitle: Text(userMap!['email']),
+                )),
+          );
+        }));
   }
 
   userTile() {
@@ -236,18 +242,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                         SizedBox(
                           height: size.height / 30,
                         ),
-                        userMap != null
-                            ? RefreshIndicator(
-                                onRefresh: () => setUpUsersToMessage(),
-                                child: ListView.builder(
-                                    itemCount: _usersToMessage.length,
-                                    itemBuilder:
-                                        (BuildContext context, int index) {
-                                      UserModel user = _usersToMessage[index];
-                                      return buildUserToMessage(user);
-                                    }),
-                              )
-                            : Container()
+                        userMap != null ? showUsers() : Container()
                       ],
                     ),
                   ],
