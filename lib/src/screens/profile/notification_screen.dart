@@ -1,13 +1,7 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first, empty_constructor_bodies, prefer_const_constructors
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
-import 'package:squirrel_main/models/user.dart';
-import 'package:squirrel_main/services/database.dart';
 import 'package:squirrel_main/utils/constant.dart';
-
-import '../../../models/activity.dart';
 
 class NotificationsScreen extends StatefulWidget {
   final String currentUserId;
@@ -19,19 +13,15 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  getActivityFeed() async {
-    QuerySnapshot snapshot = await activitiesRef
+  Stream<List<ActivityFeedItem>> getActivityFeed() {
+    return activitiesRef
         .doc(widget.currentUserId)
         .collection('feedItems')
         .orderBy('timestamp', descending: true)
         .limit(50)
-        .get();
-    List<ActivityFeedItem> feedItems = [];
-    for (var doc in snapshot.docs) {
-      feedItems.add(ActivityFeedItem.fromDoc(doc));
-      print("Activity feed item ${doc.data()}");
-    }
-    return feedItems;
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => ActivityFeedItem.fromDoc(doc)).toList());
   }
 
   @override
@@ -48,20 +38,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ),
       ),
-      body: FutureBuilder<List<Widget>>(
-        future: getActivityFeed(),
-        builder: ((context, snapshot) {
-          if (snapshot.hasData) {
-            return CircularProgressIndicator();
+      body: StreamBuilder<List<ActivityFeedItem>>(
+        stream: getActivityFeed(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Text('Error: ${snapshot.error}');
+          } else {
+            final list = snapshot.data;
+            if (list == null) {
+              return CircularProgressIndicator();
+            }
+            return ListView(children: list);
           }
-          return ListView(children: snapshot.data);
-        }),
+        },
       ),
     );
   }
 }
 
-late Widget mediaPreview;
+Widget mediaPreview = Text('');
 late String activityItemText;
 
 class ActivityFeedItem extends StatelessWidget {
@@ -74,32 +69,34 @@ class ActivityFeedItem extends StatelessWidget {
   final String photoUrl;
   final String username;
 
-  const ActivityFeedItem(
-      {super.key,
-      required this.commentData,
-      required this.image,
-      required this.postId,
-      required this.timestamp,
-      required this.type,
-      required this.userId,
-      required this.username,
-      required this.photoUrl});
+  const ActivityFeedItem({
+    super.key,
+    required this.commentData,
+    required this.image,
+    required this.postId,
+    required this.timestamp,
+    required this.type,
+    required this.userId,
+    required this.username,
+    required this.photoUrl,
+  });
 
   factory ActivityFeedItem.fromDoc(DocumentSnapshot doc) {
+    final Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return ActivityFeedItem(
-      commentData: doc['commentData'],
-      image: doc['image'],
-      postId: doc['postId'],
-      timestamp: doc['timestamp'],
-      type: doc['type'],
-      userId: doc['userId'],
-      username: doc['username'],
-      photoUrl: doc['photoUrl'],
+      commentData: data.containsKey('commentData') ? data['commentData'] : '',
+      image: data.containsKey('image') ? data['image'] : '',
+      postId: data.containsKey('postId') ? data['postId'] : '',
+      timestamp: data.containsKey('timestamp') ? data['timestamp'] : null,
+      type: data.containsKey('type') ? data['type'] : '',
+      userId: data.containsKey('userId') ? data['userId'] : '',
+      username: data.containsKey('username') ? data['username'] : '',
+      photoUrl: data.containsKey('photoUrl') ? data['photoUrl'] : '',
     );
   }
 
-  configureMediaPreview() {
-    if (type == 'like' || type == 'comment') {
+  void configureMediaPreview() {
+    if (image.isNotEmpty && type != 'like') {
       mediaPreview = GestureDetector(
         onTap: () => print('showing post'),
         child: SizedBox(
@@ -126,7 +123,7 @@ class ActivityFeedItem extends StatelessWidget {
     } else if (type == 'follow') {
       activityItemText = "is now following you";
     } else if (type == 'comment') {
-      activityItemText = 'replied: $commentData';
+      activityItemText = ' replied: $commentData';
     } else {
       activityItemText = "Error: unknown type $type";
     }
@@ -135,41 +132,65 @@ class ActivityFeedItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     configureMediaPreview();
+    DateTime date =
+        DateTime.fromMillisecondsSinceEpoch(timestamp.millisecondsSinceEpoch);
 
     return Padding(
-      padding: EdgeInsets.only(bottom: 2.0),
-      child: Container(
-        color: Colors.white54,
-        child: ListTile(
-          title: GestureDetector(
-            onTap: () => print('show profile'),
-            child: RichText(
-              overflow: TextOverflow.ellipsis,
-              text: TextSpan(
-                style: TextStyle(
-                  fontSize: 14.0,
-                  color: Colors.black,
-                ),
-                children: [
-                  TextSpan(
-                    text: username,
+      padding: const EdgeInsets.all(4.0),
+      child: Card(
+        child: Column(
+          children: [
+            ListTile(
+              title: GestureDetector(
+                onTap: () => print('show profile'),
+                child: RichText(
+                  overflow: TextOverflow.ellipsis,
+                  text: TextSpan(
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                      fontSize: 14.0,
+                      color: Colors.black,
                     ),
+                    children: [
+                      TextSpan(
+                        text: username,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '\n${date.hour}:${date.minute}',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 14.0,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' $activityItemText',
+                        style: TextStyle(
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
                   ),
-                  TextSpan(text: activityItemText)
-                ],
+                ),
               ),
+              leading: CircleAvatar(
+                backgroundImage: NetworkImage(photoUrl),
+              ),
+              trailing: mediaPreview,
             ),
-          ),
-          leading: CircleAvatar(
-            backgroundImage: NetworkImage(photoUrl),
-          ),
-          subtitle: Text(
-            timestamp.toString(),
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: mediaPreview,
+            if (commentData.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(left: 60.0),
+                child: Text(
+                  commentData,
+                  style: TextStyle(
+                    fontSize: 14.0,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

@@ -126,7 +126,7 @@ class DatabaseMethods {
     sightingsRef.doc(sighting.uid).set({'sightingTime': sighting.timestamp});
     sightingsRef.doc(sighting.uid).collection("userSightings").add({
       "uid": sighting.uid,
-      "species": sighting.colour,
+      "species": sighting.species,
       "timestamp": sighting.timestamp,
       "location": sighting.location
     });

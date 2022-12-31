@@ -1,5 +1,6 @@
 // ignore_for_file: library_private_types_in_public_api, prefer_const_constructors
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:squirrel_main/models/post.dart';
 import 'package:squirrel_main/models/user.dart';
@@ -53,11 +54,16 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _loading = true;
     });
-    List homeScreenPosts =
-        await DatabaseMethods.getHomeScreenPosts(widget.currentUserId);
+    QuerySnapshot allPostsSnap = await postsRef
+        .doc(widget.currentUserId) // obtain a DocumentReference object
+        .collection('userPosts') // access the 'userPosts' collection
+        .orderBy('timestamp', descending: true)
+        .get();
+    List<Post> allPosts =
+        allPostsSnap.docs.map((doc) => Post.fromDoc(doc)).toList();
     if (mounted) {
       setState(() {
-        _homeScreenPosts = homeScreenPosts;
+        _homeScreenPosts = allPosts;
         _loading = false;
       });
     }

@@ -1,4 +1,4 @@
-// ignore_for_file: file_names, unrelated_type_equality_checks
+// ignore_for_file: file_names, unrelated_type_equality_checks, prefer_interpolation_to_compose_strings, prefer_const_constructors
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -35,6 +35,7 @@ class _PostContainerState extends State<PostContainer> {
   bool _isLiked = false;
   int _commentsCount = 0;
 
+  // get's length of comments on a particular post
   getCommentCount() async {
     int commentsCount = await DatabaseMethods.commentsNum(widget.post.id);
     if (mounted) {
@@ -44,6 +45,7 @@ class _PostContainerState extends State<PostContainer> {
     }
   }
 
+  // checks to see if the currentUid exists
   Future<bool> getLikeStatus() async {
     DocumentSnapshot document = await likesRef
         .doc(widget.post.id)
@@ -66,6 +68,7 @@ class _PostContainerState extends State<PostContainer> {
     }
   }
 
+  // get's length of like's collection
   getLikesCount() async {
     int likesCount = await DatabaseMethods.likesNum(widget.post.id);
     if (mounted) {
@@ -75,6 +78,7 @@ class _PostContainerState extends State<PostContainer> {
     }
   }
 
+  // upon liking posts, add's like to user's notifications
   addLikeToActivityFeed(UserModel user) {
     return activitiesRef
         .doc(widget.author.uid)
@@ -91,6 +95,7 @@ class _PostContainerState extends State<PostContainer> {
     });
   }
 
+  // delete's user's post from database
   deletePost(String postId, String userId) async {
     try {
       await FirestoreMethods().deletePost(postId, userId);
@@ -107,6 +112,7 @@ class _PostContainerState extends State<PostContainer> {
     getLikeStatus();
   }
 
+  // adds an onTap to profile picture, takes to author's profile page
   goToProfilePage(UserModel user) {
     return GestureDetector(
       onTap: () {
@@ -126,6 +132,7 @@ class _PostContainerState extends State<PostContainer> {
     );
   }
 
+  // adds an onTap to the user's text, takes to profilePage
   goToProfilePageText(UserModel user) {
     return GestureDetector(
       onTap: () {
@@ -176,6 +183,7 @@ class _PostContainerState extends State<PostContainer> {
                       ),
                     ],
                   ),
+                  // if currentUid is the authorUid, give's ability to delete post
                   if (widget.currentUserId == widget.author.uid)
                     IconButton(
                       onPressed: () {

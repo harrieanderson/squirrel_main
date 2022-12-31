@@ -23,9 +23,9 @@ class ChatRoom extends StatelessWidget {
   File? imageFile;
 
   Future getImage() async {
-    ImagePicker _picker = ImagePicker();
+    ImagePicker picker = ImagePicker();
 
-    await _picker.pickImage(source: ImageSource.gallery).then((xFile) {
+    await picker.pickImage(source: ImageSource.gallery).then((xFile) {
       if (xFile != null) {
         imageFile = File(xFile.path);
         uploadImage();
@@ -106,7 +106,14 @@ class ChatRoom extends StatelessWidget {
         title: FutureBuilder<DocumentSnapshot>(
           future: usersRef.doc(userMap['uid']).get(),
           builder: (context, snapshot) {
-            if (snapshot.data != null) {
+            if (snapshot.hasError) {
+              // Display an error message if an error occurs
+              return Text('Error: ${snapshot.error}');
+            } else if (snapshot.connectionState == ConnectionState.waiting) {
+              // Display a loading indicator while waiting for the data to load
+              return SizedBox.shrink();
+            } else {
+              // Display the data once it has loaded
               return Row(
                 children: [
                   CircleAvatar(
@@ -117,8 +124,6 @@ class ChatRoom extends StatelessWidget {
                   )
                 ],
               );
-            } else {
-              return Container();
             }
           },
         ),
@@ -269,5 +274,3 @@ class ShowImage extends StatelessWidget {
     );
   }
 }
-
-//

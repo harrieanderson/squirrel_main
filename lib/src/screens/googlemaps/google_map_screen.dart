@@ -1,4 +1,4 @@
-// ignore_for_file: no_logic_in_create_state, prefer_const_constructors, unnecessary_new
+// ignore_for_file: no_logic_in_create_state, prefer_const_constructors, unnecessary_new, use_build_context_synchronously, unnecessary_null_comparison
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +10,7 @@ import 'package:squirrel_main/models/cull_model.dart';
 import 'package:squirrel_main/models/sighting_model.dart';
 import 'package:squirrel_main/services/database.dart';
 import 'package:squirrel_main/src/screens/googlemaps/position_services.dart';
+import 'package:squirrel_main/utils/constant.dart';
 import 'package:squirrel_main/utils/utils.dart';
 
 class GoogleMapScreen extends StatefulWidget {
@@ -22,74 +23,60 @@ class GoogleMapScreen extends StatefulWidget {
 }
 
 class _GoogleMapScreenState extends State<GoogleMapScreen> {
-  List<Marker> markers = [];
-  Completer<GoogleMapController> _controller = Completer();
-  Set<Polyline> _polylines = Set<Polyline>();
+  final Completer<GoogleMapController> _controller = Completer();
   Location location = new Location();
   Geoflutterfire geo = Geoflutterfire();
+  final Set<Marker> _markers = <Marker>{};
+  late LatLng _tappedLocation;
+
   var isLoading = true;
 
   late GoogleMapController newGoogleMapController;
 
-  Future<void> _goCurrentPosition(double startLat, double startLng) async {
-    final GoogleMapController controller = await _controller.future;
-    controller.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(target: LatLng(startLat, startLng), zoom: 17),
-      ),
+  Future<void> goToCurrentPosition(double startLat, double startLng,
+      {double zoom = 17}) async {
+    try {
+      final GoogleMapController controller = await _controller.future;
+      controller.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: LatLng(startLat, startLng), zoom: zoom),
+        ),
+      );
+    } catch (error) {
+      print('Error moving to current position: $error');
+    }
+  }
+
+  Future<String> promptForCull(context) async {
+    return await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Select Gender'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop('male'),
+              child: Text('Male'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop('female'),
+              child: Text('Female'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop('unknown'),
+              child: Text('Unknown'),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  // getMarkerData() {
-  //   cullsRef.get().then((QuerySnapshot querySnapshot) {
-  //     querySnapshot.docs.forEach((doc) {
-  //       initMarker(doc.data(), doc.id);
-  //     });
-  //   });
-  // }
-
-  // void initMarker(specify, specifyId) async {
-  //   var markerIdVal = specifyId;
-  //   final MarkerId markerId = MarkerId(markerIdVal);
-  //   final Marker marker = Marker(
-  //       markerId: markerId,
-  //       position:
-  //           LatLng(specify['location'].latitude, specify['location'].longitude),
-  //       infoWindow: InfoWindow(title: specify['name']));
-  //   setState(() {
-  //     markers[markerId] = marker;
-  //   });
-  // }
-
-  Future<String> promptForGender(context) async {
-    return await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Select Gender'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop('male'),
-                child: Text('Male'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop('female'),
-                child: Text('Female'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop('unknown'),
-                child: Text('Unknown'),
-              ),
-            ],
-          );
-        });
-  }
-
-  Future<String> promptForColour(context) async {
+  Future<String> promptForSighting(context) async {
     return await showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Center(
@@ -99,51 +86,119 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
           ),
           actions: [
             Center(
-              child: SizedBox(
-                child: Padding(
-                  padding: const EdgeInsets.all(6.0),
-                  child: TextButton(
-                    onPressed: () =>
-                        Navigator.of(context).pop('Ring Necked Parakeet'),
-                    child: Text('Ring Necked Parakeet'),
-                  ),
-                ),
+              child: TextButton(
+                onPressed: () =>
+                    Navigator.of(context).pop('Ring Necked Parakeet'),
+                child: Text('Ring Necked Parakeet'),
               ),
             ),
-            Row(
+            ButtonBar(
               children: [
-                SizedBox(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: TextButton(
-                      onPressed: () => Navigator.of(context).pop('grey'),
-                      child: Text('Grey'),
-                    ),
-                  ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop('grey'),
+                  child: Text('Grey'),
                 ),
-                SizedBox(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: TextButton(
-                      onPressed: () => Navigator.of(context).pop('red'),
-                      child: Text('Red'),
-                    ),
-                  ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop('red'),
+                  child: Text('Red'),
                 ),
-                SizedBox(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: TextButton(
-                      onPressed: () => Navigator.of(context).pop('pine marten'),
-                      child: Text('pine marten'),
-                    ),
-                  ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop('pine marten'),
+                  child: Text('pine marten'),
                 ),
               ],
             ),
           ],
         );
       },
+    );
+  }
+
+  void addMarkersToMap(List<DocumentSnapshot> documents, String recordType) {
+    for (var document in documents) {
+      if (recordType == 'cull') {
+        // Create a new Cull object from the snapshot
+        Cull cull = Cull.fromDoc(document);
+        GeoPoint location = cull.location;
+        Marker marker = Marker(
+          markerId: MarkerId(document.id),
+          position: LatLng(location.latitude, location.longitude),
+          infoWindow: InfoWindow(
+            title: 'Cull',
+            snippet:
+                'Cull: ${cull.gender}\nTimestamp: ${cull.timestamp.toDate()}',
+          ),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueOrange,
+          ),
+        );
+        _markers.add(marker);
+      } else if (recordType == 'sighting') {
+        // Create a new Sighting object from the snapshot
+        Sighting sighting = Sighting.fromDoc(document);
+        GeoPoint location = sighting.location;
+        Marker marker = Marker(
+          markerId: MarkerId(document.id),
+          position: LatLng(location.latitude, location.longitude),
+          infoWindow: InfoWindow(
+            title: 'Sighting',
+            snippet:
+                'Sighting: ${sighting.species}\nTimestamp: ${sighting.timestamp.toDate()}',
+          ),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueGreen,
+          ),
+        );
+        _markers.add(marker);
+      }
+    }
+  }
+
+  Future<void> addCullRecord() async {
+    final gender = await promptForCull(context);
+    if (gender == null) {
+      // Display an error message if no gender is selected
+      showSnackBar(context, 'Please select a gender');
+      return;
+    }
+    if (_tappedLocation == null) {
+      // Display an error message if no location is selected
+      showSnackBar(context, 'Please tap on the map to select a location');
+      return;
+    }
+    Cull cullObject = Cull(
+        gender: gender,
+        location: GeoPoint(_tappedLocation.latitude, _tappedLocation.longitude),
+        timestamp: Timestamp.fromDate(DateTime.now()),
+        uid: widget.uid);
+    DatabaseMethods.addCull(cullObject);
+    showSnackBar(
+      context,
+      'cull successfully added!',
+    );
+  }
+
+  Future<void> addSightingRecord() async {
+    final species = await promptForSighting(context);
+    if (species == null) {
+      // Display an error message if no gender is selected
+      showSnackBar(context, 'Please select a gender');
+      return;
+    }
+    if (_tappedLocation == null) {
+      // Display an error message if no location is selected
+      showSnackBar(context, 'Please tap on the map to select a location');
+      return;
+    }
+    Sighting sightingObject = Sighting(
+        species: species,
+        location: GeoPoint(_tappedLocation.latitude, _tappedLocation.longitude),
+        timestamp: Timestamp.fromDate(DateTime.now()),
+        uid: widget.uid);
+    DatabaseMethods.addSighting(sightingObject);
+    showSnackBar(
+      context,
+      'sighting successfully added!',
     );
   }
 
@@ -158,95 +213,87 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
         title: Text('Google maps'),
       ),
       body: Column(
-        children: <Widget>[
-          SizedBox(
-            height: MediaQuery.of(context).size.height / 1.75,
+        children: [
+          Expanded(
             child: GoogleMap(
-              onTap: (tapped) {
-                print('$tapped');
-                Marker _newMarker = Marker(
-                  markerId: MarkerId('markerId'),
-                  position: LatLng(
-                    tapped.latitude,
-                    tapped.longitude,
-                  ),
-                  infoWindow: InfoWindow(
-                    title: 'mark cull',
-                  ),
-                  icon: BitmapDescriptor.defaultMarkerWithHue(
-                    BitmapDescriptor.hueRed,
-                  ),
-                );
-                markers.add(_newMarker);
-
-                setState(() {});
-              },
-              mapType: MapType.normal,
               initialCameraPosition: england,
               myLocationEnabled: true,
-              zoomGesturesEnabled: true,
+              mapType: MapType.normal,
               zoomControlsEnabled: true,
+              zoomGesturesEnabled: true,
+              markers: _markers,
               onMapCreated: (GoogleMapController controller) {
                 _controller.complete(controller);
               },
-              markers: markers.map((e) => e).toSet(),
+              onTap: (LatLng location) {
+                setState(() {
+                  _tappedLocation = location;
+                  _markers.add(
+                    Marker(
+                      markerId: MarkerId('tappedLocation'),
+                      position: location,
+                    ),
+                  );
+                });
+              },
             ),
           ),
+          StreamBuilder<QuerySnapshot>(
+            stream:
+                cullsRef.doc(widget.uid).collection('userCulls').snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                // Add the culls to the map
+                addMarkersToMap(snapshot.data!.docs, 'cull');
+              }
+              return Container();
+            },
+          ),
+          StreamBuilder<QuerySnapshot>(
+            stream: sightingsRef
+                .doc(widget.uid)
+                .collection('userSightings')
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                // Add the sightings to the map
+                addMarkersToMap(snapshot.data!.docs, 'sighting');
+              }
+              return Container();
+            },
+          ),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              SizedBox(
-                width: MediaQuery.of(context).size.width / 2,
-                child: TextButton.icon(
-                  onPressed: () async {
-                    final _gender = await promptForGender(context);
-                    Cull cull = Cull(
-                        gender: _gender,
-                        location: GeoPoint(markers.last.position.latitude,
-                            markers.last.position.longitude),
-                        timestamp: Timestamp.fromDate(DateTime.now()),
-                        uid: widget.uid);
-                    DatabaseMethods.addCull(cull);
-                    showSnackBar(
-                      context,
-                      'cull successfully added!',
-                    );
+              Container(
+                margin: const EdgeInsets.only(bottom: 70),
+                child: TextButton(
+                  onPressed: () {
+                    // Add a cull record to the database
+                    addCullRecord();
                   },
-                  icon: Icon(Icons.gps_fixed),
-                  label: Text('Add cull record'),
+                  child: Text('Add Cull'),
                 ),
               ),
-              SizedBox(
-                width: MediaQuery.of(context).size.width / 2,
-                child: TextButton.icon(
-                  onPressed: () async {
-                    final colour = await promptForColour(context);
-                    Sighting sighting = Sighting(
-                        colour: colour,
-                        uid: widget.uid,
-                        timestamp: Timestamp.fromDate(
-                          DateTime.now(),
-                        ),
-                        location: GeoPoint(markers.last.position.latitude,
-                            markers.last.position.longitude));
-                    DatabaseMethods.addSighting(sighting);
-                    showSnackBar(
-                      context,
-                      'Sighting successfully added',
-                    );
+              Container(
+                margin: const EdgeInsets.only(bottom: 70),
+                child: TextButton(
+                  onPressed: () {
+                    // Add a sighting record to the database
+                    addSightingRecord();
                   },
-                  icon: Icon(Icons.remove_red_eye_sharp),
-                  label: Text('Mark sighting'),
+                  child: Text('Add Sighting'),
                 ),
               ),
             ],
-          ),
+          )
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           Position currentPosition =
               await PositionServices().getCurrentPosition();
-          _goCurrentPosition(
+          goToCurrentPosition(
               currentPosition.latitude, currentPosition.longitude);
         },
         label: Text('Get current location'),
